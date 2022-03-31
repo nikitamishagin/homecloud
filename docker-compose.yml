@@ -60,8 +60,6 @@ services:
   letsencrypt-companion:
     image: nginxproxy/acme-companion
     restart: always
-    volumes_from:
-      - proxy
     volumes:
       - certs:/etc/nginx/certs:rw
       - acme:/etc/acme.sh
