@@ -1,4 +1,4 @@
-version: '2.4'
+version: '3.9'
 
 services:
   db:
@@ -12,6 +12,8 @@ services:
   redis:
     image: redis:alpine
     restart: always
+    volumes:
+      - redis:/data
 
   app:
     image: nextcloud:apache
@@ -70,6 +72,7 @@ services:
       - proxy
 
 volumes:
+  redis:
   certs:
   acme:
   vhost.d:
