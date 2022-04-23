@@ -1,0 +1,97 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:alpine
+    volumes:
+      - /var/lib/psql:/var/lib/postgresql/data
+    env_file:
+      - db.env
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 5s
+        failure_action: rollback
+        order: start-first
+        max_failure_ratio: 0
+      restart_policy:
+        condition: on-failure
+    networks:
+      - nextcloud
+
+  redis:
+    image: redis:alpine
+    volumes:
+      - redis:/data
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 5s
+        failure_action: rollback
+        order: start-first
+        max_failure_ratio: 0
+      restart_policy:
+        condition: on-failure
+    networks:
+      - nextcloud
+
+  app:
+    image: nextcloud:apache
+    volumes:
+      - /md0p1/nextcloud-data:/var/www/html
+    environment:
+      - POSTGRES_HOST=db
+      - REDIS_HOST=redis
+    env_file:
+      - db.env
+      - vhost.env
+    depends_on:
+      - db
+      - redis
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 5s
+        failure_action: rollback
+        order: start-first
+        max_failure_ratio: 0
+      restart_policy:
+        condition: on-failure
+    networks:
+      - proxy
+      - nextcloud
+
+  cron:
+    image: nextcloud:apache
+    restart: always
+    volumes:
+      - /md0p1/nextcloud-data:/var/www/html
+    entrypoint: /cron.sh
+    depends_on:
+      - db
+      - redis
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 5s
+        failure_action: rollback
+        order: start-first
+        max_failure_ratio: 0
+      restart_policy:
+        condition: on-failure
+    networks:
+      - nextcloud
+
+volumes:
+  redis:
+
+networks:
+  nextcloud:
+    driver: overlay
+  proxy:
+    external: true
+    name: reverse-proxy_proxy
